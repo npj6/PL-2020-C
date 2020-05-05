@@ -1,1 +1,5 @@
 *.o
+*.yy.c
+*.tab.c
+*.tab.h
+/p4/plp4
