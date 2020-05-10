@@ -1,0 +1,42 @@
+class Main {
+  fun main  int a;float b {
+
+    fun submain float c {
+      print 1+2-(3*4.5/6);
+      float d;
+      d = a+b/c;
+      if a<d :
+        float e
+      else {
+        int b;
+        int d;
+        b = a+77;
+        d = b+33;
+        print d+c
+      }
+      fi
+    }
+
+    class A {
+    }
+
+    class B {
+      fun mainB float g {
+        {
+          int h;
+
+          h = 7;
+          {
+            float i;
+
+            i = 2.5 != 2.4999
+          }
+        }
+      }
+    }
+
+    /* codigo main */
+
+    print 7
+  }
+}
