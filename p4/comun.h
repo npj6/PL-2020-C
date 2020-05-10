@@ -10,6 +10,8 @@ typedef struct {
   int linea;
   int columna;
   int tipo;
+  string prefix;
+  string indent;
 } TOKEN;
 
 #define YYSTYPE TOKEN

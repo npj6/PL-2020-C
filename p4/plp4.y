@@ -28,6 +28,7 @@
 
   TablaSimbolos* tsa = new TablaSimbolos(NULL);
 
+
   void abrirAmbito(void);
   void cerrarAmbito(void);
 
@@ -69,12 +70,12 @@ tipo  : INT {$$.tipo = ENTERO;}
       | FLOAT {$$.tipo = REAL;}
       ;
 
-cod   : cod PYC i {cout << 13 << " ";}
-      | i {cout << 14 << " ";}
+cod   : cod PYC i {}
+      | i {}
       ;
 
-i     : dv {cout << 15 << " ";}
-      | {abrirAmbito();} LBRA cod RBRA {cerrarAmbito();}
+i     : {$$.prefix = $0.prefix;} dv {$$.trad = $2.trad + ";";}
+      | {abrirAmbito();} LBRA {$$.prefix = $0.prefix + "_"; $$.indent = $0.indent + "\t";} cod RBRA {cerrarAmbito(); $$.trad = "{\n"+$4.trad+$0.indent+"}";}
       | ID {buscarSimbolo($1);} ASIG expr { if ($1.tipo == ENTERO && $4.tipo == REAL) {
                                               errorSemantico(ERRTIPOS, $3);
                                             } else if ($1.tipo == REAL && $4.tipo == ENTERO) {
@@ -82,11 +83,19 @@ i     : dv {cout << 15 << " ";}
                                             }
                                             $$.trad = $1.trad + " = " + $4.trad + ";";
                                           }
-      | IF expr {if ($2.tipo != ENTERO) errorSemantico(ERRNOENTERO, $1);} DOSP i ip {cout << 18 << " ";}
-      | PRINT expr {cout << 21 << " ";}
+      | IF expr {if ($2.tipo != ENTERO) errorSemantico(ERRNOENTERO, $1);} DOSP {$$.prefix = $0.prefix;$$.indent = $0.indent + "\t";} i ip {
+          $$.trad = "if("+$2.trad+")\n"+$5.indent+$6.trad+$7.trad+"\n";
+        }
+      | PRINT expr {  string letra;
+                      if($2.tipo==REAL)
+                        letra = "f";
+                      else
+                        letra = "d";
+                      $$.trad = "printf(\"%"+letra+"\", "+$2.trad+");";
+                   }
       ;
 
-ip    : ELSE i FI {cout << 19 << " ";}
+ip    : ELSE {$$.prefix = $0.prefix;$$.indent = $0.indent;} i FI {$$.trad = "\n" + $0.indent + "else\n" + $2.indent + $3.trad;}
       | FI {$$.trad = "";}
       ;
 

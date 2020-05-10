@@ -57,8 +57,9 @@ void crearToken (void) {
   yylval.linea = line;
   yylval.columna = column;
   yylval.trad = yytext;
-  yylval.tipo = 0;
-  cout << "TOKEN(" << yylval.linea << "," << yylval.columna <<"): " << yylval.lex << " " << yylval.trad << endl;
+  yylval.tipo = -1;
+  yylval.prefix = "";
+  yylval.indent = "";
 }
 
 void msgError(int nerror,int nlin,int ncol,const char *s) {
