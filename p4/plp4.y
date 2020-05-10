@@ -7,6 +7,7 @@
 
 %{
   #include "comun.h"
+  #include "TablaSimbolos.h"
 
   extern int column, line, findefichero;
 
@@ -16,7 +17,15 @@
 
   int yyerror(char *s);
 
-  void errorSemantico(int nerror,char *lexema,int fila,int columna);
+  static void errorSemantico(int nerror,char *lexema,int fila,int columna);
+
+  TablaSimbolos* tsa = NULL;
+
+  void abrirAmbito(void);
+  void cerrarAmbito(void);
+
+  void nuevoSimbolo(string lex, int tipo, string trad);
+  TOKEN buscarSimbolo(string lex);
 
 %}
 
@@ -98,7 +107,7 @@ int yyerror(char *s) {
 
 const int ERRYADECL=1,ERRNODECL=2,ERRTIPOS=3,ERRNOSIMPLE=4,ERRNOENTERO=5;
 
-void errorSemantico(int nerror,char *lexema,int fila,int columna)
+static void errorSemantico(int nerror,char *lexema,int fila,int columna)
 {
     fprintf(stderr,"Error semantico (%d,%d): en '%s', ",fila,columna,lexema);
     switch (nerror) {
@@ -115,6 +124,40 @@ void errorSemantico(int nerror,char *lexema,int fila,int columna)
     }
     exit(-1);
 }
+
+  void abrirAmbito(void) {
+    tsa = new TablaSimbolos(tsa);
+  }
+  void cerrarAmbito(void) {
+    TablaSimbolos* antigua = tsa;
+    tsa = tsa->padre;
+    delete antigua;
+  }
+
+  void nuevoSimbolo(TOKEN id) {
+    Simbolo nuevo;
+    nuevo.nombre = id.lex;
+    nuevo.tipo = id.tipo;
+    nuevo.nomtrad = id.trad;
+    if (!tsa->anyadir(nuevo)) {
+      errorSemantico(ERRYADECL, strdup(id.lex.c_str()), id.linea, id.columna);
+    }
+  }
+
+  TOKEN buscarSimbolo(TOKEN id) {
+    Simbolo* encontrado = tsa->buscar(id.lex);
+    if (!encontrado) {
+      errorSemantico(ERRNODECL, strdup(id.lex.c_str()), id.linea, id.columna);
+    }
+    if (encontrado->tipo == CLASSFUN) {
+      errorSemantico(ERRNOSIMPLE, strdup(id.lex.c_str()), id.linea, id.columna);
+    }
+    TOKEN output;
+    output.lex = encontrado->nombre;
+    output.tipo = encontrado->tipo;
+    output.trad = encontrado->nomtrad;
+    return output;
+  }
 
 int main(int argc, char *argv[]) {
   yyin = fopen("test.in", "r");
