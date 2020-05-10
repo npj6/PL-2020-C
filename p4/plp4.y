@@ -42,40 +42,46 @@
 %}
 
 %%
-x     : s {if (yylex()) yyerror(""); $$.trad = $1.trad;}
+x     : s {if (yylex()) yyerror(""); $$.trad = $1.trad; cout << $1.trad << endl;}
       ;
 
-s     : CLASS ID {$2.tipo = CLASSFUN; nuevoSimbolo($2); abrirAmbito();} LBRA m RBRA {cerrarAmbito();}
+s     : CLASS ID {$2.tipo = CLASSFUN; $2.trad = $0.prefix + $2.trad; nuevoSimbolo($2); abrirAmbito();} LBRA {$$.prefix = $0.prefix + $2.lex + "_"; $$.indent = $0.indent;} m RBRA {
+          cerrarAmbito();
+          $$.trad = $0.indent + "// class " + $2.trad + "\n" + $6.trad;
+        }
       ;
 
-m     : m sf {cout << 3 << " ";}
-      | {cout << 4 << " ";}
+m     : m {$$.prefix = $0.prefix; $$.indent = $0.indent;} sf {$$.trad = $1.trad + "\n" + $3.trad;}
+      | {$$.trad = "";}
       ;
 
-sf    : s {cout << 5 << " ";}
-      | fun {cout << 6 << " ";}
+sf    : s {$$.trad = $1.trad;}
+      | fun {$$.trad = $1.trad;}
       ;
 
-fun   : FUN ID {$2.tipo = CLASSFUN; nuevoSimbolo($2); abrirAmbito();} a LBRA m cod RBRA {cerrarAmbito();}
+fun   : FUN ID {$2.tipo = CLASSFUN; $2.trad = $0.prefix + $2.trad; nuevoSimbolo($2); abrirAmbito();} a LBRA {$$.prefix = $0.prefix + $2.lex + "_"; $$.indent = $0.indent + "\t";} m {$$.prefix = $6.prefix; $$.indent = $6.indent;} cod RBRA {
+          cerrarAmbito();
+          $$.trad = $0.indent + "void " + $2.trad + "(" + $4.trad + ") { \n" + $7.trad + "\n" + $9.trad + "\n" + $0.indent + "} // " + $2.trad;
+        }
       ;
 
-a     : a PYC dv {cout << 8 << " ";}
-      | dv {cout << 9 << " ";}
+a     : a PYC dv {$$.trad = $1.trad + ", " + $3.trad;}
+      | dv {$$.trad = $1.trad;}
       ;
 
-dv    : tipo ID {$2.tipo = $1.tipo; nuevoSimbolo($2);}
+dv    : tipo ID {$2.tipo = $1.tipo; $2.trad = $0.prefix + $2.trad; nuevoSimbolo($2); $$.trad = $1.trad + " " + $2.trad;}
       ;
 
 tipo  : INT {$$.tipo = ENTERO;}
       | FLOAT {$$.tipo = REAL;}
       ;
 
-cod   : cod PYC i {}
-      | i {}
+cod   : cod PYC {$$.prefix = $0.prefix; $$.indent = $0.indent;} i {$$.trad = $1.trad +"\n" + $3.indent + $4.trad;}
+      | i {$$.trad = $0.indent + $1.trad;}
       ;
 
 i     : {$$.prefix = $0.prefix;} dv {$$.trad = $2.trad + ";";}
-      | {abrirAmbito();} LBRA {$$.prefix = $0.prefix + "_"; $$.indent = $0.indent + "\t";} cod RBRA {cerrarAmbito(); $$.trad = "{\n"+$4.trad+$0.indent+"}";}
+      | {abrirAmbito();} LBRA {$$.prefix = $0.prefix + "_"; $$.indent = $0.indent + "\t";} cod RBRA {cerrarAmbito(); $$.trad = "{\n"+$4.trad+"\n"+$0.indent+"}";}
       | ID {buscarSimbolo($1);} ASIG expr { if ($1.tipo == ENTERO && $4.tipo == REAL) {
                                               errorSemantico(ERRTIPOS, $3);
                                             } else if ($1.tipo == REAL && $4.tipo == ENTERO) {
@@ -83,8 +89,8 @@ i     : {$$.prefix = $0.prefix;} dv {$$.trad = $2.trad + ";";}
                                             }
                                             $$.trad = $1.trad + " = " + $4.trad + ";";
                                           }
-      | IF expr {if ($2.tipo != ENTERO) errorSemantico(ERRNOENTERO, $1);} DOSP {$$.prefix = $0.prefix;$$.indent = $0.indent + "\t";} i ip {
-          $$.trad = "if("+$2.trad+")\n"+$5.indent+$6.trad+$7.trad+"\n";
+      | IF expr {if ($2.tipo != ENTERO) errorSemantico(ERRNOENTERO, $1);} DOSP {$$.prefix = $0.prefix;$$.indent = $0.indent + "\t";} i {$$.prefix = $5.prefix;$$.indent = $0.indent;} ip {
+          $$.trad = "if("+$2.trad+")\n"+$5.indent+$6.trad+$8.trad+"\n";
         }
       | PRINT expr {  string letra;
                       if($2.tipo==REAL)
@@ -202,9 +208,20 @@ f     : NUMENTERO {$$.tipo = ENTERO; $$.trad = $1.trad;}
   }
 
 int main(int argc, char *argv[]) {
-  yyin = fopen("test.in", "r");
-  yyparse();
-  fclose(yyin);
+  FILE *fent;
+
+  if (argc==2) {
+    fent = fopen(argv[1], "rt");
+    if (fent) {
+      yyin = fent;
+      yyparse();
+      fclose(fent);
+    } else {
+      fprintf(stderr, "No puedo abrir el fichero\n");
+    }
+  } else {
+    fprintf(stderr, "USO: ejemplo <nombre de fichero>\n");
+  }
   cout << endl;
   return 0;
 }
