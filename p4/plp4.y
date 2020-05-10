@@ -66,7 +66,7 @@ fun   : FUN ID {$2.tipo = CLASSFUN; $2.trad = $0.prefix + $2.trad; nuevoSimbolo(
       ;
 
 a     : a PYC dv {$$.trad = $1.trad + ", " + $3.trad;}
-      | dv {$$.trad = $1.trad;}
+      | {$$.prefix = "";} dv {$$.trad = $2.trad;}
       ;
 
 dv    : tipo ID {$2.tipo = $1.tipo; $2.trad = $0.prefix + $2.trad; nuevoSimbolo($2); $$.trad = $1.trad + " " + $2.trad;}
