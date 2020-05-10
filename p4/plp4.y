@@ -19,13 +19,13 @@
 
   static void errorSemantico(int nerror,char *lexema,int fila,int columna);
 
-  TablaSimbolos* tsa = NULL;
+  TablaSimbolos* tsa = new TablaSimbolos(NULL);
 
   void abrirAmbito(void);
   void cerrarAmbito(void);
 
-  void nuevoSimbolo(string lex, int tipo, string trad);
-  TOKEN buscarSimbolo(string lex);
+  void nuevoSimbolo(TOKEN id);
+  void buscarSimbolo(TOKEN &id);
 
 %}
 
@@ -33,7 +33,7 @@
 x     : s {if (yylex()) yyerror(""); $$.trad = $1.trad;}
       ;
 
-s     : CLASS ID LBRA m RBRA {cout << 2 << " ";}
+s     : CLASS ID {$2.tipo = CLASSFUN; nuevoSimbolo($2); abrirAmbito();} LBRA m RBRA {cerrarAmbito();}
       ;
 
 m     : m sf {cout << 3 << " ";}
@@ -44,18 +44,18 @@ sf    : s {cout << 5 << " ";}
       | fun {cout << 6 << " ";}
       ;
 
-fun   : FUN ID a LBRA m cod RBRA {cout << 7 << " ";}
+fun   : FUN ID {$2.tipo = CLASSFUN; nuevoSimbolo($2); abrirAmbito();} a LBRA m cod RBRA {cerrarAmbito();}
       ;
 
 a     : a PYC dv {cout << 8 << " ";}
       | dv {cout << 9 << " ";}
       ;
 
-dv    : tipo ID {cout << 10 << " ";}
+dv    : tipo ID {$2.tipo = $1.tipo; nuevoSimbolo($2);}
       ;
 
-tipo  : INT {cout << 11 << " ";}
-      | FLOAT {cout << 12 << " ";}
+tipo  : INT {$$.tipo = ENTERO;}
+      | FLOAT {$$.tipo = REAL;}
       ;
 
 cod   : cod PYC i {cout << 13 << " ";}
@@ -63,7 +63,7 @@ cod   : cod PYC i {cout << 13 << " ";}
       ;
 
 i     : dv {cout << 15 << " ";}
-      | LBRA cod RBRA {cout << 16 << " ";}
+      | {abrirAmbito();} LBRA cod RBRA {cerrarAmbito();}
       | ID ASIG expr {cout << 17 << " ";}
       | IF expr DOSP i ip {cout << 18 << " ";}
       | PRINT expr {cout << 21 << " ";}
@@ -87,7 +87,7 @@ t     : t OPMUL f {cout << 26 << " ";}
 
 f     : NUMENTERO {cout << 28 << " ";}
       | NUMREAL {cout << 29 << " ";}
-      | ID {cout << 30 << " ";}
+      | ID {buscarSimbolo($1);}
       | PARI expr PARD {cout << 31 << " ";}
       ;
 
@@ -144,7 +144,7 @@ static void errorSemantico(int nerror,char *lexema,int fila,int columna)
     }
   }
 
-  TOKEN buscarSimbolo(TOKEN id) {
+  void buscarSimbolo(TOKEN &id) {
     Simbolo* encontrado = tsa->buscar(id.lex);
     if (!encontrado) {
       errorSemantico(ERRNODECL, strdup(id.lex.c_str()), id.linea, id.columna);
@@ -152,11 +152,8 @@ static void errorSemantico(int nerror,char *lexema,int fila,int columna)
     if (encontrado->tipo == CLASSFUN) {
       errorSemantico(ERRNOSIMPLE, strdup(id.lex.c_str()), id.linea, id.columna);
     }
-    TOKEN output;
-    output.lex = encontrado->nombre;
-    output.tipo = encontrado->tipo;
-    output.trad = encontrado->nomtrad;
-    return output;
+    id.tipo = encontrado->tipo;
+    id.trad = encontrado->nomtrad;
   }
 
 int main(int argc, char *argv[]) {
