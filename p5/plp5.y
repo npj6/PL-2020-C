@@ -1,7 +1,7 @@
 %token PRG VAR
 %token INTT REALT CHART
 %token IF ELSE WHILE
-%token PRINTLN PRINT READ TOCHR TOINT
+%token PRN READ TOCHR TOINT
 %token ID NUMENTERO NUMREAL CTECHAR
 %token COMA PYC DOSP PTOPTO
 %token PARI PARD OPREL OPAS OPMD ASIG CORI CORD
@@ -23,43 +23,67 @@
 %}
 
 %%
-
-x : any {cout << $1.lex << endl;} x
-  |
-  ;
-
-any : PRG
-    | VAR
-    | INTT
-    | REALT
-    | CHART
-    | IF
-    | ELSE
-    | WHILE
-    | PRINTLN
-    | PRINT
-    | READ
-    | TOCHR
-    | TOINT
-    | ID
-    | NUMENTERO
-    | NUMREAL
-    | CTECHAR
-    | COMA
-    | PYC
-    | DOSP
-    | PTOPTO
-    | PARI
-    | PARD
-    | OPREL
-    | OPAS
-    | OPMD
-    | ASIG
-    | CORI
-    | CORD
-    | LBRA
-    | RBRA
-    ;
+s           : PRG ID DOSP blvar bloque
+            ;
+bloque      : LBRA seqinstr RBRA
+            ;
+blvar       : VAR decl PYC
+            ;
+decl        : decl PYC dvar
+            | dvar
+            ;
+dvar        : tipo DOSP lident
+            ;
+tiposimple  : INTT
+            | REALT
+            | CHART
+            ;
+tipo        : tiposimple
+            | CORI rango dims
+            ;
+dims        : COMA rango dims
+            | CORD tiposimple
+            ;
+rango       : NUMENTERO PTOPTO NUMENTERO
+            ;
+lident      : lident COMA ID
+            | ID
+            ;
+seqinstr    : seqinstr PYC instr
+            | instr
+            ;
+instr       : bloque
+            | ref ASIG expr
+            | PRN expr
+            | READ expr
+            | IF expr DOSP instr
+            | IF expr DOSP instr ELSE instr
+            | WHILE expr DOSP instr
+            ;
+expr        : esimple OPREL esimple
+            | esimple
+            ;
+esimple     : esimple OPAS term
+            | term
+            | OPAS term
+            ;
+term        : term OPMD factor
+            | factor
+            ;
+factor      : ref
+            | NUMENTERO
+            | NUMREAL
+            | CTECHAR
+            | PARI expr PARD
+            | TOCHR PARI esimple PARD
+            | TOINT PARI esimple PARD
+            ;
+ref         : ID
+            | ID CORI lisexpr CORD
+            ;
+lisexpr     : lisexpr COMA expr
+            | expr
+            ;
 %%
 
 int main(int argc, char *argv[]) {
