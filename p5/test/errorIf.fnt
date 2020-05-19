@@ -1,0 +1,12 @@
+prg b:
+
+var int:a,b;
+    
+{
+
+  b = -7;
+  a = +b*3;
+  if (a<b)*0.55:  (* Error en 'if': la expresion del 'if' debe ser de tipo entero *)
+    print a
+
+}

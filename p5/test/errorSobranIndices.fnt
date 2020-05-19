@@ -1,0 +1,16 @@
+prg sob:
+
+var int:i,j,k;
+    [1..2,2..3,3..4,4..5,5..6] real: mat;
+
+{
+   
+  i=1;
+  j=toInt(2.99);
+  k=+i+j;
+  {
+    mat[i,j,k,3+i,3+j  ,  3+k] = 2.5    (* Error(12,24) en ',' : sobran indices  *)
+  }
+
+  print 7
+}

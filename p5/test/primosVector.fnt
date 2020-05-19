@@ -1,0 +1,42 @@
+
+prg prueba:
+var
+   [1..100] int : primos;
+   int : entrada,i,cprimo;
+   int : suma;
+   int : num,anterior;
+   char : esdivisible;
+{
+   read entrada;   (* Entrada:   45 *)
+
+   cprimo = 1;
+   while entrada>0 :
+   {
+     esdivisible = 'n';
+     num = entrada;
+     anterior = num-1;
+     while ((esdivisible == 'n') * (anterior>1)) :
+      if num/anterior*anterior==num :
+       esdivisible = 'y'
+      else
+       anterior = anterior-1;
+
+     if esdivisible == 'n':
+     {
+        primos[cprimo] = entrada;
+        cprimo = cprimo+1
+     };
+     entrada = entrada-1
+   };
+
+   i = 1;
+   suma = 0;
+
+   while i<cprimo :
+    {
+     suma = suma+primos[i];
+     i = i+1
+    };
+
+   println suma   (* Salida: 282 *)
+}

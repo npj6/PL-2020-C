@@ -1,0 +1,24 @@
+prg primos:
+var
+   int:a,b,suma,i;
+   int:EsPrimo;
+{
+  suma = 0;
+  read a;           (* Entrada : "9" *)
+  b = 1;
+  while b<=a :
+   {
+    i = b-1;
+    EsPrimo = 1;
+    while EsPrimo * (i>1) :
+      if i*(b / i)==b :
+        EsPrimo = 0
+      else
+        i = i-1;
+    a = a+2-2;
+    if EsPrimo :
+      suma = suma+b;
+    b = b+1
+   };
+  println suma      (* debe salir "18" *)
+}

@@ -8,6 +8,7 @@
 
 using namespace std;
 
+const unsigned NUMERICO= (unsigned) -1;
 const unsigned ENTERO=0;
 const unsigned REAL=1;
 const unsigned CHAR=2;
@@ -24,15 +25,15 @@ struct Simbolo {
 class TablaSimbolos {
 
    public:
-   
+
       TablaSimbolos *padre;
       vector<Simbolo> simbolos;
-   
-   
+
+
    TablaSimbolos(TablaSimbolos *padre);
 
    bool buscarAmbito(Simbolo s); // ver si está en el ámbito actual
-   
+
    bool anyadir(Simbolo s);
    Simbolo* buscar(string nombre);
 };

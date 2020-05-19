@@ -1,0 +1,21 @@
+prg mcd:
+var
+  int:a,b,mcd,sig;
+  int:salir;
+{
+  salir = 0;
+  read a;         (* Entrada: "27" *)
+  b = a / 3*2;  (* b == 18 *)
+  mcd = 1;
+  sig = 1;
+  while  salir == 0:
+   {
+      sig = sig+1;
+      if sig>b :
+         salir = 1
+      else
+         if (sig*(a / sig)==a) * (sig*(b / sig)==b) :
+           mcd = sig
+   };
+  println mcd   (* debe salir "9" *)
+}

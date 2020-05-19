@@ -1,0 +1,16 @@
+prg ifs:
+var
+  int:a,b;
+{
+  read a;           (* Entrada: "7" *)
+  b = 0;
+  if a<100 :
+   if a>1 :
+     if a<=7 :
+       if a>=7 :
+         if a!=7 :
+           b = 7
+         else
+           b = 8;
+  println b         (* debe salir "8" *)
+}

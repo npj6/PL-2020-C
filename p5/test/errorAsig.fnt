@@ -1,0 +1,12 @@
+prg a:
+
+var int:a;
+    real:B;
+
+{
+  a = (1+2+3+4+5)/3;
+  B = a;
+  B = B+0.5;
+  a = B;      (* Error en '=': tipos incompatibles entero/real *)
+  println B
+}

@@ -1,0 +1,27 @@
+prg conv:
+
+var int:i,j;
+    real:s,r;
+    char:c,d;
+
+{
+  c = 'A';
+  i = toInt(c);       (* 65 *)
+  j = i+32;           (* 97 *)
+  d = toChr(4096+j);  (* 'a' *)
+
+  s = (j+0.5)/i;
+  r = (i+0.0);
+
+  print c;
+  print ' ';
+  print d;
+  print ' ';
+  print i;
+  print ' ';
+  print j;
+  print ' ';
+  print s;
+  print ' ';
+  println r     (* salida: 'A a 65 97 1.500 65.000' *)
+}
