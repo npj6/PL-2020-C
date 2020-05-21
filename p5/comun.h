@@ -1,6 +1,8 @@
 #include <string>
 #include <iostream>
 #include <cstring>
+#include <tuple>
+#include <vector>
 
 using namespace std;
 
@@ -8,6 +10,10 @@ typedef struct {
   string lex;
   int linea;
   int columna;
+
+  unsigned lInf, lSup;
+  vector<tuple<unsigned, unsigned> > *limites;
+  int tipo; //dentro de los tipos se usa como tipoBase
 } TOKEN;
 
 #define YYSTYPE TOKEN
@@ -38,5 +44,6 @@ const int ERRLEXICO=1,
           ERR_OPDER=17;
 
 void errorSemantico(int nerror,int fila,int columna,const char *s);
+void errorSemantico(int nerror, const TOKEN &t);
 void msgErrorOperador(int tipoesp,const char *op,int linea,int columna,int lado);
 void msgError(int nerror,int nlin,int ncol,const char *s);

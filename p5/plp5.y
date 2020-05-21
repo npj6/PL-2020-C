@@ -18,12 +18,22 @@
   extern char *yytext;
   extern FILE *yyin;
 
+  TablaTipos tipos;
+  TablaSimbolos simbolos(NULL);
+
+  void mostrarTipos(void);
+  string nombreTipo(unsigned tipo);
+  void nombreTipo(unsigned tipo, string &tipoString);
+
+  unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsigned tbase);
+  unsigned nuevoTipoArray(unsigned linf, unsigned lsup, unsigned tbase);
+
   int yyerror(char *s);
 
 %}
 
 %%
-s           : PRG ID DOSP blvar bloque
+s           : PRG ID DOSP blvar bloque {mostrarTipos();}
             ;
 bloque      : LBRA seqinstr RBRA
             ;
@@ -32,19 +42,19 @@ blvar       : VAR decl PYC
 decl        : decl PYC dvar
             | dvar
             ;
-dvar        : tipo DOSP lident
+dvar        : tipo {$$.tipo = comprobarTipo(*$1.limites, $1.tipo); delete $1.limites;} DOSP lident
             ;
-tiposimple  : INTT
-            | REALT
-            | CHART
+tiposimple  : INTT {$$.tipo = ENTERO; $$.limites = new vector<tuple<unsigned, unsigned> >();}
+            | REALT {$$.tipo = REAL; $$.limites = new vector<tuple<unsigned, unsigned> >();}
+            | CHART {$$.tipo = CHAR; $$.limites = new vector<tuple<unsigned, unsigned> >();}
             ;
-tipo        : tiposimple
-            | CORI rango dims
+tipo        : tiposimple {$$.tipo = $1.tipo; $$.limites = $1.limites;}
+            | CORI rango dims {$$.tipo = $3.tipo; $$.limites = $3.limites; $$.limites->push_back(make_tuple($2.lInf, $2.lSup));}
             ;
-dims        : COMA rango dims
-            | CORD tiposimple
+dims        : COMA rango dims {$$.limites = $3.limites; $$.limites->push_back(make_tuple($2.lInf, $2.lSup));}
+            | CORD tiposimple {$$.limites = $2.limites; $$.tipo = $2.tipo;}
             ;
-rango       : NUMENTERO PTOPTO NUMENTERO
+rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi($3.lex); if($$.lSup<$$.lInf) errorSemantico(ERR_RANGO, $3);}
             ;
 lident      : lident COMA ID
             | ID
@@ -117,13 +127,13 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
         case ERR_MAXTEMP:fprintf(stderr,"no hay espacio para variables temporales\n");
                // fila,columna da igual
                break;
-        case ERR_RANGO:fprintf(stderr,"el segundo valor debe ser mayor o igual que el primero.");
+        case ERR_RANGO:fprintf(stderr,"el segundo valor debe ser mayor o igual que el primero.\n");
                // fila,columna del segundo número del rango
                break;
-        case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero",s);
+        case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero\n",s);
                break;
 
-        case ERR_TOCHR:fprintf(stderr,"el argumento de '%s' debe ser entero.",s);
+        case ERR_TOCHR:fprintf(stderr,"el argumento de '%s' debe ser entero.\n",s);
                break;
 
         case ERR_FALTAN: fprintf(stderr,"faltan indices\n");
@@ -189,6 +199,10 @@ void msgError(int nerror,int nlin,int ncol,const char *s) {
      exit(1);
 }
 
+void errorSemantico(int nerror, const TOKEN &t) {
+  errorSemantico(nerror, t.linea, t.columna, t.lex.c_str());
+}
+
 int yyerror(char *s) {
     extern int findefichero;  // de plp5.l
     if (findefichero)
@@ -200,4 +214,50 @@ int yyerror(char *s) {
        msgError(ERRSINT,line,column-strlen(yytext),yytext);
     }
     return 0;  // no llega, msgError hace exit
+}
+
+
+unsigned nuevoTipoArray(unsigned linf, unsigned lsup, unsigned tbase) {
+  for(int i=tipos.tipos.size()-1; 0 <= i; i--) {
+    unTipo &t = tipos.tipos[i];
+    if(t.clase == ARRAY && t.tipoBase == tbase
+      && t.limiteInferior == linf && t.limiteSuperior == lsup) {
+        return i;
+    }
+  }
+  return tipos.nuevoTipoArray(linf, lsup, tbase);
+}
+
+/*comprueba que un tipo exista y si no, lo crea.
+limites tiene que ser creado al reves!*/
+unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsigned tbase) {
+  int ultimoTipo = tbase;
+  for(int i=0; i < limites.size(); i++) {
+    ultimoTipo = nuevoTipoArray(get<0>(limites[i]), get<1>(limites[i]), ultimoTipo);
+  }
+  return ultimoTipo;
+}
+
+void mostrarTipos(void) {
+  for(int i=0; i<tipos.tipos.size(); i++) {
+    cout << i << "\t" << nombreTipo(i) << endl;
+  }
+}
+
+string nombreTipo(unsigned tipo) {
+  string tString = "";
+  nombreTipo(tipo, tString);
+  return tString;
+}
+void nombreTipo(unsigned tipo, string &tipoString) {
+  if (tipo == ENTERO) {
+    tipoString = "int" + tipoString;
+  } else if (tipo==REAL) {
+    tipoString = "real" + tipoString;
+  } else if (tipo==CHAR) {
+    tipoString = "char" + tipoString;
+  } else {
+    tipoString = "["+to_string(tipos.tipos[tipo].limiteInferior)+".."+to_string(tipos.tipos[tipo].limiteSuperior)+"]" + tipoString;
+    nombreTipo(tipos.tipos[tipo].tipoBase, tipoString);
+  }
 }

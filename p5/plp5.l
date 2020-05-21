@@ -83,4 +83,6 @@ void crearToken(string lex) {
   yylval.lex = lex;
   yylval.linea = line;
   yylval.columna = column;
+
+  yylval.limites = nullptr;
 }

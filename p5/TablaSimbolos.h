@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const unsigned NUMERICO= (unsigned) -1;
+const unsigned NUMERICO = (unsigned) -1;
 const unsigned ENTERO=0;
 const unsigned REAL=1;
 const unsigned CHAR=2;
