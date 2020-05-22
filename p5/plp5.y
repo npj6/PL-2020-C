@@ -11,6 +11,7 @@
   #include "comun.h"
   #include "TablaSimbolos.h"
   #include "TablaTipos.h"
+  #include "MemoryManager.h"
 
   extern int column, line, findefichero;
 
@@ -20,12 +21,13 @@
 
   TablaTipos tipos;
   TablaSimbolos simbolos(NULL);
+  MemoryManager memoria(16000);
 
   void mostrarTipos(void);
   string nombreTipo(unsigned tipo);
   void nombreTipo(unsigned tipo, string &tipoString);
 
-  void nuevoSimbolo(TOKEN id);
+  void nuevoSimbolo(const TOKEN &id, const TOKEN &dosp);
   void buscarSimbolo(TOKEN &id);
 
   unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsigned tbase);
@@ -59,8 +61,8 @@ dims        : COMA rango dims {$$.limites = $3.limites; $$.limites->push_back(ma
             ;
 rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi($3.lex); if($$.lSup<$$.lInf) errorSemantico(ERR_RANGO, $3);}
             ;
-lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1);}
-            | ID {$1.tipo = $0.tipo; nuevoSimbolo($1);}
+lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
+            | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
 seqinstr    : seqinstr PYC instr
             | instr
@@ -241,11 +243,16 @@ unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsign
   return ultimoTipo;
 }
 
-void nuevoSimbolo(TOKEN id) {
+void nuevoSimbolo(const TOKEN &id, const TOKEN &dosp) {
   Simbolo nuevo;
   nuevo.nombre = id.lex;
   nuevo.tipo = id.tipo;
   nuevo.tam = tipos.tipos[id.tipo].tam;
+  try {
+    nuevo.dir = memoria.getVarDir(nuevo.tam);
+  } catch (no_memory_left &e) {
+    errorSemantico(ERR_NOCABE, dosp.linea, dosp.columna, id.lex.c_str());
+  }
   if (!simbolos.anyadir(nuevo)) {
     errorSemantico(ERR_YADECL, id);
   }
@@ -257,6 +264,7 @@ void buscarSimbolo(TOKEN &id) {
     errorSemantico(ERR_NODECL, id);
   }
   id.tipo = encontrado->tipo;
+  id.dir = encontrado->dir;
 }
 
 void mostrarTipos(void) {
@@ -267,7 +275,9 @@ void mostrarTipos(void) {
   cout << endl;
 
   for(int i=0; i<simbolos.simbolos.size(); i++) {
-    cout << i << "\t" << simbolos.simbolos[i].nombre << "\ttipo " << simbolos.simbolos[i].tipo << "\t" << simbolos.simbolos[i].tam << " celdas" << endl;
+    cout << i << "\t" << simbolos.simbolos[i].nombre << "\ttipo " << simbolos.simbolos[i].tipo
+      << "\t" << simbolos.simbolos[i].tam << " celdas\tdireccion "
+      << simbolos.simbolos[i].dir << endl;
   }
 }
 

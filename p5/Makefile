@@ -1,5 +1,5 @@
 OPTS=-Wall -g -Wno-write-strings -Wno-unused-function -Wno-sign-compare -std=c++11
-OBJS=lex.yy.o plp5.tab.o TablaSimbolos.o TablaTipos.o
+OBJS=lex.yy.o plp5.tab.o TablaSimbolos.o TablaTipos.o MemoryManager.o
 CC=g++
 
 plp5: $(OBJS)
@@ -17,11 +17,14 @@ TablaSimbolos.o: TablaSimbolos.cc TablaSimbolos.h
 TablaTipos.o: TablaTipos.cc TablaTipos.h TablaSimbolos.h
 	$(CC) $(OPTS) -c TablaTipos.cc
 
+MemoryManager.o: MemoryManager.cc MemoryManager.h
+	$(CC) $(OPTS) -c MemoryManager.cc
+
 lex.yy.c : plp5.l comun.h
 	flex plp5.l
-	
-plp5.tab.c plp5.tab.h: plp5.y lex.yy.c comun.h TablaSimbolos.h TablaTipos.h
-	bison -d plp5.y	
+
+plp5.tab.c plp5.tab.h: plp5.y lex.yy.c comun.h TablaSimbolos.h TablaTipos.h MemoryManager.h
+	bison -d plp5.y
 
 
 clean:

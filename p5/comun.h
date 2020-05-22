@@ -14,6 +14,8 @@ typedef struct {
   unsigned lInf, lSup;
   vector<tuple<unsigned, unsigned> > *limites;
   int tipo; //dentro de los tipos se usa como tipoBase
+
+  unsigned dir;
 } TOKEN;
 
 #define YYSTYPE TOKEN
