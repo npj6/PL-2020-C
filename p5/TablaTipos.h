@@ -17,14 +17,15 @@ struct unTipo {
   unsigned limiteInferior;
   unsigned limiteSuperior;
   unsigned tipoBase;
+  unsigned tam;
 };
 
 class TablaTipos {
 
   public:
-  
+
      vector<unTipo> tipos;
-     
+
      TablaTipos();
      unsigned nuevoTipoArray(unsigned linf,unsigned lsup,unsigned tbase);
 

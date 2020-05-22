@@ -25,6 +25,9 @@
   string nombreTipo(unsigned tipo);
   void nombreTipo(unsigned tipo, string &tipoString);
 
+  void nuevoSimbolo(TOKEN id);
+  void buscarSimbolo(TOKEN &id);
+
   unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsigned tbase);
   unsigned nuevoTipoArray(unsigned linf, unsigned lsup, unsigned tbase);
 
@@ -42,7 +45,7 @@ blvar       : VAR decl PYC
 decl        : decl PYC dvar
             | dvar
             ;
-dvar        : tipo {$$.tipo = comprobarTipo(*$1.limites, $1.tipo); delete $1.limites;} DOSP lident
+dvar        : tipo {$$.tipo = comprobarTipo(*$1.limites, $1.tipo); delete $1.limites;} DOSP {$$.tipo = $2.tipo;} lident
             ;
 tiposimple  : INTT {$$.tipo = ENTERO; $$.limites = new vector<tuple<unsigned, unsigned> >();}
             | REALT {$$.tipo = REAL; $$.limites = new vector<tuple<unsigned, unsigned> >();}
@@ -56,8 +59,8 @@ dims        : COMA rango dims {$$.limites = $3.limites; $$.limites->push_back(ma
             ;
 rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi($3.lex); if($$.lSup<$$.lInf) errorSemantico(ERR_RANGO, $3);}
             ;
-lident      : lident COMA ID
-            | ID
+lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1);}
+            | ID {$1.tipo = $0.tipo; nuevoSimbolo($1);}
             ;
 seqinstr    : seqinstr PYC instr
             | instr
@@ -88,8 +91,8 @@ factor      : ref
             | TOCHR PARI esimple PARD
             | TOINT PARI esimple PARD
             ;
-ref         : ID
-            | ID CORI lisexpr CORD
+ref         : ID {buscarSimbolo($1);}
+            | ID {buscarSimbolo($1);} CORI lisexpr CORD
             ;
 lisexpr     : lisexpr COMA expr
             | expr
@@ -238,9 +241,33 @@ unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsign
   return ultimoTipo;
 }
 
+void nuevoSimbolo(TOKEN id) {
+  Simbolo nuevo;
+  nuevo.nombre = id.lex;
+  nuevo.tipo = id.tipo;
+  nuevo.tam = tipos.tipos[id.tipo].tam;
+  if (!simbolos.anyadir(nuevo)) {
+    errorSemantico(ERR_YADECL, id);
+  }
+}
+
+void buscarSimbolo(TOKEN &id) {
+  Simbolo* encontrado = simbolos.buscar(id.lex);
+  if (!encontrado) {
+    errorSemantico(ERR_NODECL, id);
+  }
+  id.tipo = encontrado->tipo;
+}
+
 void mostrarTipos(void) {
   for(int i=0; i<tipos.tipos.size(); i++) {
-    cout << i << "\t" << nombreTipo(i) << endl;
+    cout << i << "\t" << tipos.tipos[i].tam << " celdas\t" << nombreTipo(i)  << endl;
+  }
+
+  cout << endl;
+
+  for(int i=0; i<simbolos.simbolos.size(); i++) {
+    cout << i << "\t" << simbolos.simbolos[i].nombre << "\ttipo " << simbolos.simbolos[i].tipo << "\t" << simbolos.simbolos[i].tam << " celdas" << endl;
   }
 }
 
@@ -257,7 +284,7 @@ void nombreTipo(unsigned tipo, string &tipoString) {
   } else if (tipo==CHAR) {
     tipoString = "char" + tipoString;
   } else {
-    tipoString = "["+to_string(tipos.tipos[tipo].limiteInferior)+".."+to_string(tipos.tipos[tipo].limiteSuperior)+"]" + tipoString;
+    tipoString += "["+to_string(tipos.tipos[tipo].limiteInferior)+".."+to_string(tipos.tipos[tipo].limiteSuperior)+"]";
     nombreTipo(tipos.tipos[tipo].tipoBase, tipoString);
   }
 }
