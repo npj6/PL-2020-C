@@ -93,11 +93,38 @@ factor      : ref
             | TOCHR PARI esimple PARD
             | TOINT PARI esimple PARD
             ;
-ref         : ID {buscarSimbolo($1);}
-            | ID {buscarSimbolo($1);} CORI lisexpr CORD
+ref         : ID {
+                buscarSimbolo($1);
+                if(tipos.tipos[$1.tipo].clase == ARRAY) {errorSemantico(ERR_FALTAN, $1);} //comprueba que no falten indices
+                //guarda los datos de la referencia
+                $$.tipo = $1.tipo;
+                $$.dir = $1.tipo;
+              }
+            | ID {buscarSimbolo($1);} CORI {$$.indices = new vector<TOKEN*>(); $$.numIndices = tipos.tipos[$1.tipo].arrTams.size();} lisexpr CORD {
+                unsigned max_size = tipos.tipos[$1.tipo].arrTams.size();
+                if ($4.indices->size() < max_size) {errorSemantico(ERR_FALTAN, $6);} //comprueba que no sobren indices
+                //libera la memoria reservada para las expresiones
+                for(unsigned i=0; i<$4.indices->size(); i++) {
+                  delete (*$4.indices)[i];
+                }
+                delete $4.indices;
+                //guarda los datos de la referencia
+                $$.tipo = tipos.tipos[$1.tipo].tipoOrigen;
+                $$.dir = $1.tipo; //cambiar despues!
+              }
             ;
-lisexpr     : lisexpr COMA expr
-            | expr
+lisexpr     : lisexpr COMA expr {
+                $0.numIndices--;
+                if($0.numIndices < 0) {errorSemantico(ERR_SOBRAN, $2);} //comprueba el numero de indices
+                if($3.tipo != ENTERO) {errorSemantico(ERR_INDICE_ENTERO, $2);} //comprueba el tipo de la expresion
+                $0.indices->push_back(new TOKEN($3)); //guarda la expresion del indice
+              }
+            | expr {
+                $0.numIndices--;
+                if($0.numIndices < 0) {errorSemantico(ERR_SOBRAN, $-1);} //comprueba el numero de indices
+                if($1.tipo != ENTERO) {errorSemantico(ERR_INDICE_ENTERO, $-1);} //comprueba el tipo de la expresion
+                $0.indices->push_back(new TOKEN($1)); //guarda la expresion del indice
+              }
             ;
 %%
 

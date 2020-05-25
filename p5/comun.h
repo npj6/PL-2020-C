@@ -6,16 +6,25 @@
 
 using namespace std;
 
-typedef struct {
+typedef struct TOKEN_STRUCT {
   string lex;
   int linea;
   int columna;
 
+  //atributos de los tipo array
   unsigned lInf, lSup;
   vector<tuple<unsigned, unsigned> > *limites;
-  int tipo; //dentro de los tipos se usa como tipoBase
 
-  unsigned dir;
+  int tipo; //tipo de la variable
+  //dentro de los tipos se usa como tipoBase
+  //en los operadores se usa como tipo del operador en lugar del resultado
+
+  vector<TOKEN_STRUCT*> *indices;//indices en un lisexpr
+
+  unsigned dir; //direccion de la variable en la memoria del m2r
+
+  int numIndices; //atributo hereado con el numero esperado de indices
+
 } TOKEN;
 
 #define YYSTYPE TOKEN
