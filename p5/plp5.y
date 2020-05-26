@@ -75,23 +75,58 @@ instr       : bloque
             | IF expr DOSP instr ELSE instr
             | WHILE expr DOSP instr
             ;
-expr        : esimple OPREL esimple
-            | esimple
+expr        : esimple OPREL esimple {
+                $$.tipo = ENTERO;
+                if($1.tipo == CHAR) {
+                  $2.tipo = CHAR;
+                  if($3.tipo != CHAR) {msgErrorOperador(CHAR, $2, ERR_OPDER);}
+                } else {
+                  if($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
+                }
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO;}
+                  else {
+                    $2.tipo = REAL;
+                    if($1.tipo == ENTERO) {/*ITOR*/}
+                    if($3.tipo == ENTERO) {/*ITOR*/}
+                  }
+              }
+            | esimple {$$.tipo = $1.tipo;}
             ;
-esimple     : esimple OPAS term
-            | term
-            | OPAS term
+esimple     : esimple OPAS term {
+                if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
+                if ($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO; $$.tipo = ENTERO;}
+                  else {
+                    $2.tipo = REAL; $$.tipo = REAL;
+                    if($1.tipo == ENTERO) {/*ITOR*/}
+                    if($3.tipo == ENTERO) {/*ITOR*/}
+                  }
+              }
+            | term {$$.tipo = $1.tipo;}
+            | OPAS term {
+                if ($2.tipo == CHAR) {msgErrorOperador(NUMERICO, $1, ERR_OPDER);}
+                $$.tipo = $2.tipo;
+              }
             ;
-term        : term OPMD factor
-            | factor
+term        : term OPMD factor {
+                if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
+                if ($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO; $$.tipo = ENTERO;}
+                  else {
+                    $2.tipo = REAL; $$.tipo = REAL;
+                    if($1.tipo == ENTERO) {/*ITOR*/}
+                    if($3.tipo == ENTERO) {/*ITOR*/}
+                  }
+              }
+            | factor {$$.tipo = $1.tipo;}
             ;
-factor      : ref
-            | NUMENTERO
-            | NUMREAL
-            | CTECHAR
-            | PARI expr PARD
-            | TOCHR PARI esimple PARD
-            | TOINT PARI esimple PARD
+factor      : ref {$$.tipo = $1.tipo;}
+            | NUMENTERO {$$.tipo = ENTERO;}
+            | NUMREAL {$$.tipo = REAL;}
+            | CTECHAR {$$.tipo = CHAR;}
+            | PARI expr PARD {$$.tipo = $2.tipo;}
+            | TOCHR PARI esimple PARD {$$.tipo = CHAR;/*FALTA COMPROBAR ERRORES*/}
+            | TOINT PARI esimple PARD {$$.tipo = ENTERO;/*FALTA COMPROBAR ERRORES*/}
             ;
 ref         : ID {
                 buscarSimbolo($1);
@@ -149,17 +184,17 @@ int main(int argc, char *argv[]) {
 void errorSemantico(int nerror,int fila,int columna,const char *s) {
     fprintf(stderr,"Error semantico (%d,%d): ",fila,columna);
     switch (nerror) {
-        case ERR_YADECL: fprintf(stderr,"variable '%s' ya declarada\n",s);
+        case ERR_YADECL: fprintf(stderr,"variable '%s' ya declarada\n",s);//USADO
                break;
-        case ERR_NODECL: fprintf(stderr,"variable '%s' no declarada\n",s);
+        case ERR_NODECL: fprintf(stderr,"variable '%s' no declarada\n",s);//USADO
                break;
-        case ERR_NOCABE:fprintf(stderr,"la variable '%s' ya no cabe en memoria\n",s);
+        case ERR_NOCABE:fprintf(stderr,"la variable '%s' ya no cabe en memoria\n",s);//USADO
                // fila,columna de ':'
                break;
         case ERR_MAXTEMP:fprintf(stderr,"no hay espacio para variables temporales\n");
                // fila,columna da igual
                break;
-        case ERR_RANGO:fprintf(stderr,"el segundo valor debe ser mayor o igual que el primero.\n");
+        case ERR_RANGO:fprintf(stderr,"el segundo valor debe ser mayor o igual que el primero.\n");//USADO
                // fila,columna del segundo número del rango
                break;
         case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero\n",s);
@@ -168,23 +203,23 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
         case ERR_TOCHR:fprintf(stderr,"el argumento de '%s' debe ser entero.\n",s);
                break;
 
-        case ERR_FALTAN: fprintf(stderr,"faltan indices\n");
+        case ERR_FALTAN: fprintf(stderr,"faltan indices\n");//USADO
                // fila,columna del id (si no hay ningún índice) o del último ']'
                break;
-        case ERR_SOBRAN: fprintf(stderr,"sobran indices\n");
+        case ERR_SOBRAN: fprintf(stderr,"sobran indices\n");//USADO
                // fila,columna del '[' si no es array, o de la ',' que sobra
                break;
-        case ERR_INDICE_ENTERO: fprintf(stderr,"el indice de un array debe ser de tipo entero\n");
+        case ERR_INDICE_ENTERO: fprintf(stderr,"el indice de un array debe ser de tipo entero\n");//USADO
                // fila,columna del '[' si es el primero, o de la ',' inmediatamente anterior
                break;
 
         case ERR_ASIG: fprintf(stderr,"tipos incompatibles en la asignacion\n");
                // fila,columna del '='
                break;
-        case ERR_OPIZQ: fprintf(stderr,"el operando de la izquierda de %s\n",s);
+        case ERR_OPIZQ: fprintf(stderr,"el operando de la izquierda de %s\n",s);//USADO
                // fila,columna del operador
                break;
-        case ERR_OPDER: fprintf(stderr,"el operando de la derecha de %s\n",s);
+        case ERR_OPDER: fprintf(stderr,"el operando de la derecha de %s\n",s);//USADO
                // fila,columna del operador
                break;
     }
@@ -195,6 +230,11 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
 //  tipoesp  :  tipo que se espera  (p.ej. CHAR < CHAR, NUMERICO + NUMERICO
 //  op : operador (+,-,>= ...)
 //  lado : ERR_OPIZQ / ERR_OPDER
+
+
+void msgErrorOperador(int tipoesp, const TOKEN &t, int lado) {
+  msgErrorOperador(tipoesp, t.lex.c_str(), t.linea, t.columna, lado);
+}
 
 void msgErrorOperador(int tipoesp,const char *op,int linea,int columna,int lado) {
    string tipoEsp,mensaje;

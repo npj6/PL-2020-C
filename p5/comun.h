@@ -17,7 +17,7 @@ typedef struct TOKEN_STRUCT {
 
   int tipo; //tipo de la variable
   //dentro de los tipos se usa como tipoBase
-  //en los operadores se usa como tipo del operador en lugar del resultado
+  //en los operadores se usa como tipo del operador (el resultado tiene su propio tipo)
 
   vector<TOKEN_STRUCT*> *indices;//indices en un lisexpr
 
@@ -56,5 +56,6 @@ const int ERRLEXICO=1,
 
 void errorSemantico(int nerror,int fila,int columna,const char *s);
 void errorSemantico(int nerror, const TOKEN &t);
+void msgErrorOperador(int tipoesp, const TOKEN &t, int lado);
 void msgErrorOperador(int tipoesp,const char *op,int linea,int columna,int lado);
 void msgError(int nerror,int nlin,int ncol,const char *s);
