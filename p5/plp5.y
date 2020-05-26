@@ -74,9 +74,9 @@ instr       : bloque
               }
             | PRN expr
             | READ expr
-            | IF expr DOSP instr
-            | IF expr DOSP instr ELSE instr
-            | WHILE expr DOSP instr
+            | IF expr DOSP instr {if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}}
+            | IF expr DOSP instr ELSE instr {if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}}
+            | WHILE expr DOSP instr {if ($2.tipo != ENTERO) {$1.lex="while"; errorSemantico(ERR_IFWHILE, $1);}}
             ;
 expr        : esimple OPREL esimple {
                 $$.tipo = ENTERO;
@@ -200,7 +200,7 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
         case ERR_RANGO:fprintf(stderr,"el segundo valor debe ser mayor o igual que el primero.\n");//USADO
                // fila,columna del segundo número del rango
                break;
-        case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero\n",s);
+        case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero\n",s);//USADO
                break;
 
         case ERR_TOCHR:fprintf(stderr,"el argumento de '%s' debe ser entero.\n",s);//USADO
