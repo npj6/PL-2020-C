@@ -216,7 +216,7 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
                // fila,columna del '[' si es el primero, o de la ',' inmediatamente anterior
                break;
 
-        case ERR_ASIG: fprintf(stderr,"tipos incompatibles en la asignacion\n");//USED
+        case ERR_ASIG: fprintf(stderr,"tipos incompatibles en la asignacion\n");//USADO
                // fila,columna del '='
                break;
         case ERR_OPIZQ: fprintf(stderr,"el operando de la izquierda de %s\n",s);//USADO

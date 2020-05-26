@@ -31,8 +31,8 @@ var {crearToken(nullptr); column += 3; return VAR;}
 int {crearToken(nullptr); column += 3; return INTT;}
 real {crearToken(nullptr); column += 4; return REALT;}
 char {crearToken(nullptr); column += 4; return CHART;}
-println {crearToken(nullptr); column += 7; return PRN;}
-print {crearToken(nullptr); column += 5; return PRN;}
+println {crearToken(nullptr); yylval.println = true; column += 7; return PRN;}
+print {crearToken(nullptr); yylval.println = false; column += 5; return PRN;}
 read {crearToken(nullptr); column += 4; return READ;}
 if {crearToken(nullptr); column += 2; return IF;}
 else {crearToken(nullptr); column += 4; return ELSE;}

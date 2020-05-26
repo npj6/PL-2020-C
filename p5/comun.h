@@ -25,6 +25,8 @@ typedef struct TOKEN_STRUCT {
 
   int numIndices; //atributo hereado con el numero esperado de indices
 
+  bool println; //distincion entre print y println! no quiero usar un maldito string pa esto.
+
 } TOKEN;
 
 #define YYSTYPE TOKEN
