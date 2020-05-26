@@ -68,7 +68,10 @@ seqinstr    : seqinstr PYC instr
             | instr
             ;
 instr       : bloque
-            | ref ASIG expr
+            | ref ASIG expr {
+            if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
+                else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
+              }
             | PRN expr
             | READ expr
             | IF expr DOSP instr
@@ -125,7 +128,7 @@ factor      : ref {$$.tipo = $1.tipo;}
             | NUMREAL {$$.tipo = REAL;}
             | CTECHAR {$$.tipo = CHAR;}
             | PARI expr PARD {$$.tipo = $2.tipo;}
-            | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr";errorSemantico(ERR_TOCHR, $1);}}
+            | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}}
             | TOINT PARI esimple PARD {$$.tipo = ENTERO;}
             ;
 ref         : ID {
@@ -200,7 +203,7 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
         case ERR_IFWHILE:fprintf(stderr,"la expresion del '%s' debe ser de tipo entero\n",s);
                break;
 
-        case ERR_TOCHR:fprintf(stderr,"el argumento de '%s' debe ser entero.\n",s);
+        case ERR_TOCHR:fprintf(stderr,"el argumento de '%s' debe ser entero.\n",s);//USADO
                break;
 
         case ERR_FALTAN: fprintf(stderr,"faltan indices\n");//USADO
@@ -213,7 +216,7 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
                // fila,columna del '[' si es el primero, o de la ',' inmediatamente anterior
                break;
 
-        case ERR_ASIG: fprintf(stderr,"tipos incompatibles en la asignacion\n");
+        case ERR_ASIG: fprintf(stderr,"tipos incompatibles en la asignacion\n");//USED
                // fila,columna del '='
                break;
         case ERR_OPIZQ: fprintf(stderr,"el operando de la izquierda de %s\n",s);//USADO
