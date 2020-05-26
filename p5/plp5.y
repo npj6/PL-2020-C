@@ -125,8 +125,8 @@ factor      : ref {$$.tipo = $1.tipo;}
             | NUMREAL {$$.tipo = REAL;}
             | CTECHAR {$$.tipo = CHAR;}
             | PARI expr PARD {$$.tipo = $2.tipo;}
-            | TOCHR PARI esimple PARD {$$.tipo = CHAR;/*FALTA COMPROBAR ERRORES*/}
-            | TOINT PARI esimple PARD {$$.tipo = ENTERO;/*FALTA COMPROBAR ERRORES*/}
+            | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr";errorSemantico(ERR_TOCHR, $1);}}
+            | TOINT PARI esimple PARD {$$.tipo = ENTERO;}
             ;
 ref         : ID {
                 buscarSimbolo($1);
