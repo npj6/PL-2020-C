@@ -38,9 +38,9 @@
 %}
 
 %%
-s           : PRG ID DOSP blvar bloque {mostrarTipos();}
+s           : PRG ID DOSP blvar bloque {mostrarTipos(); $$.trad = $5.trad + "\nhalt"; cout << $5.trad;}
             ;
-bloque      : LBRA seqinstr RBRA
+bloque      : LBRA seqinstr RBRA {$$.trad = $2.trad;}
             ;
 blvar       : VAR decl PYC
             ;
@@ -64,19 +64,29 @@ rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi
 lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
-seqinstr    : seqinstr PYC instr
-            | instr
+seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + "\n" + $3.trad;}
+            | instr {$$.trad = $1.trad;}
             ;
-instr       : bloque
+instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
-            if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
+                if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
+                $$.trad = "";
               }
-            | PRN expr
-            | READ expr
-            | IF expr DOSP instr {if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}}
-            | IF expr DOSP instr ELSE instr {if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}}
-            | WHILE expr DOSP instr {if ($2.tipo != ENTERO) {$1.lex="while"; errorSemantico(ERR_IFWHILE, $1);}}
+            | PRN expr {$$.trad = "";}
+            | READ expr {$$.trad = "";}
+            | IF expr DOSP instr {
+                if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}
+                $$.trad = "";
+              }
+            | IF expr DOSP instr ELSE instr {
+                if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}
+                $$.trad = "";
+              }
+            | WHILE expr DOSP instr {
+                if ($2.tipo != ENTERO) {$1.lex="while"; errorSemantico(ERR_IFWHILE, $1);}
+                $$.trad = "";
+              }
             ;
 expr        : esimple OPREL esimple {
                 $$.tipo = ENTERO;

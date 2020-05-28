@@ -27,6 +27,8 @@ typedef struct TOKEN_STRUCT {
 
   bool println; //distincion entre print y println! no quiero usar un maldito string pa esto.
 
+  string trad;
+
 } TOKEN;
 
 #define YYSTYPE TOKEN
