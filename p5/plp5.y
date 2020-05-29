@@ -30,6 +30,8 @@
   void nuevoSimbolo(const TOKEN &id, const TOKEN &dosp);
   void buscarSimbolo(TOKEN &id);
 
+  unsigned nuevoTemporal();
+
   unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsigned tbase);
   unsigned nuevoTipoArray(unsigned linf, unsigned lsup, unsigned tbase);
 
@@ -38,7 +40,7 @@
 %}
 
 %%
-s           : PRG ID DOSP blvar bloque {mostrarTipos(); $$.trad = $5.trad + "\nhalt"; cout << $5.trad;}
+s           : PRG ID DOSP blvar bloque {mostrarTipos(); $$.trad = $5.trad + "\nhalt"; cout << $$.trad << endl;}
             ;
 bloque      : LBRA seqinstr RBRA {$$.trad = $2.trad;}
             ;
@@ -64,14 +66,14 @@ rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi
 lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
-seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + "\n" + $3.trad;}
-            | instr {$$.trad = $1.trad;}
+seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + "\n" + $3.trad; memoria.resetTempDir();}
+            | instr {$$.trad = $1.trad; memoria.resetTempDir();}
             ;
 instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
                 if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
-                $$.trad = "";
+                $$.trad = $3.trad;
               }
             | PRN expr {$$.trad = "";}
             | READ expr {$$.trad = "";}
@@ -134,10 +136,22 @@ term        : term OPMD factor {
             | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
             ;
 factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = "";}
-            | NUMENTERO {$$.tipo = ENTERO;}
-            | NUMREAL {$$.tipo = REAL;}
-            | CTECHAR {$$.tipo = CHAR;}
-            | PARI expr PARD {$$.tipo = $2.tipo;}
+            | NUMENTERO {
+                $$.tipo = ENTERO;
+                $$.dir = nuevoTemporal();
+                $$.trad = "mov #" + $1.lex + " " + to_string($$.dir);
+              }
+            | NUMREAL {
+                $$.tipo = REAL;
+                $$.dir = nuevoTemporal();
+                $$.trad = "mov $" + $1.lex + " " + to_string($$.dir);
+              }
+            | CTECHAR {
+                $$.tipo = CHAR;
+                $$.dir = nuevoTemporal();
+                $$.trad = "mov #" + $1.lex + " " + to_string($$.dir);
+              }
+            | PARI expr PARD {$$.tipo = $2.tipo; $$.dir = $2.dir; $$.trad = $2.trad;}
             | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}}
             | TOINT PARI esimple PARD {$$.tipo = ENTERO;}
             ;
@@ -321,6 +335,17 @@ unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsign
     ultimoTipo = nuevoTipoArray(get<0>(limites[i]), get<1>(limites[i]), ultimoTipo);
   }
   return ultimoTipo;
+}
+
+
+unsigned nuevoTemporal() {
+  unsigned dir;
+  try {
+    dir = memoria.getTempDir(1);
+  } catch (no_memory_left &e) {
+    errorSemantico(ERR_MAXTEMP, 0, 0, nullptr);
+  }
+  return dir;
 }
 
 void nuevoSimbolo(const TOKEN &id, const TOKEN &dosp) {

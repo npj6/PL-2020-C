@@ -1,7 +1,13 @@
 prg test:
 var
-  int i;
+  int : i;
+  char : c;
+  real : r;
 {
   i = 0;
-  print i
+  c = '0';
+  r = 0.0;
+  println i;
+  print c;
+  println r
 }
