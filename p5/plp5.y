@@ -21,7 +21,7 @@
 
   TablaTipos tipos;
   TablaSimbolos simbolos(NULL);
-  MemoryManager memoria(16000);
+  MemoryManager memoria(16000, 384);
 
   void mostrarTipos(void);
   string nombreTipo(unsigned tipo);
@@ -103,7 +103,7 @@ expr        : esimple OPREL esimple {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | esimple {$$.tipo = $1.tipo;}
+            | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir;}
             ;
 esimple     : esimple OPAS term {
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
@@ -115,7 +115,7 @@ esimple     : esimple OPAS term {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | term {$$.tipo = $1.tipo;}
+            | term {$$.tipo = $1.tipo; $$.dir = $1.dir;}
             | OPAS term {
                 if ($2.tipo == CHAR) {msgErrorOperador(NUMERICO, $1, ERR_OPDER);}
                 $$.tipo = $2.tipo;
@@ -131,9 +131,9 @@ term        : term OPMD factor {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | factor {$$.tipo = $1.tipo;}
+            | factor {$$.tipo = $1.tipo; $$.dir = $1.dir;}
             ;
-factor      : ref {$$.tipo = $1.tipo;}
+factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir;}
             | NUMENTERO {$$.tipo = ENTERO;}
             | NUMREAL {$$.tipo = REAL;}
             | CTECHAR {$$.tipo = CHAR;}
@@ -146,7 +146,7 @@ ref         : ID {
                 if(tipos.tipos[$1.tipo].clase == ARRAY) {errorSemantico(ERR_FALTAN, $1);} //comprueba que no falten indices
                 //guarda los datos de la referencia
                 $$.tipo = $1.tipo;
-                $$.dir = $1.tipo;
+                $$.dir = $1.dir;
               }
             | ID {buscarSimbolo($1);} CORI {$$.indices = new vector<TOKEN*>(); $$.numIndices = tipos.tipos[$1.tipo].arrTams.size();} lisexpr CORD {
                 unsigned max_size = tipos.tipos[$1.tipo].arrTams.size();

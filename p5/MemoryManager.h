@@ -11,8 +11,12 @@ class MemoryManager {
   private:
     unsigned varMem;
     unsigned nextVar;
+    unsigned tempMem;
+    unsigned nextTemp;
   public:
-    MemoryManager(unsigned mem);
+    MemoryManager(unsigned varMem, unsigned tempMem);
     unsigned getVarDir(unsigned varSize);
+    unsigned getTempDir(unsigned tempSize);
+    void resetTempDir();
 };
 #endif
