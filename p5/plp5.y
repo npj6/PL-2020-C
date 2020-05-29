@@ -73,7 +73,7 @@ instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
                 if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
-                $$.trad = $3.trad;
+                $$.trad = $3.trad + "mov " + to_string($3.dir) + " " + to_string($1.dir)+"\n";
               }
             | PRN expr {
                 string instruccion;
@@ -88,7 +88,7 @@ instr       : bloque {$$.trad = $1.trad;}
                   $$.trad += "wrl\n";
                 }
               }
-            | READ expr {
+            | READ ref {
                 string instruccion;
                 switch($2.tipo) {
                   case ENTERO: instruccion = "rdi "; break;

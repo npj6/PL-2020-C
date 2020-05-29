@@ -4,6 +4,7 @@ var
   char : c;
   real : r;
 {
+  read i;
   i = 0;
   c = '0';
   r = 0.0;
