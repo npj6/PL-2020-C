@@ -103,7 +103,7 @@ expr        : esimple OPREL esimple {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir;}
+            | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
             ;
 esimple     : esimple OPAS term {
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
@@ -115,7 +115,7 @@ esimple     : esimple OPAS term {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | term {$$.tipo = $1.tipo; $$.dir = $1.dir;}
+            | term {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
             | OPAS term {
                 if ($2.tipo == CHAR) {msgErrorOperador(NUMERICO, $1, ERR_OPDER);}
                 $$.tipo = $2.tipo;
@@ -131,9 +131,9 @@ term        : term OPMD factor {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | factor {$$.tipo = $1.tipo; $$.dir = $1.dir;}
+            | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
             ;
-factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir;}
+factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = "";}
             | NUMENTERO {$$.tipo = ENTERO;}
             | NUMREAL {$$.tipo = REAL;}
             | CTECHAR {$$.tipo = CHAR;}
