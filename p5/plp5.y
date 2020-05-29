@@ -40,7 +40,7 @@
 %}
 
 %%
-s           : PRG ID DOSP blvar bloque {mostrarTipos(); $$.trad = $5.trad + "\nhalt"; cout << $$.trad << endl;}
+s           : PRG ID DOSP blvar bloque {mostrarTipos(); $$.trad = $5.trad + "halt"; cout << $$.trad << endl;}
             ;
 bloque      : LBRA seqinstr RBRA {$$.trad = $2.trad;}
             ;
@@ -66,7 +66,7 @@ rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi
 lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
-seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + "\n" + $3.trad; memoria.resetTempDir();}
+seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + $3.trad; memoria.resetTempDir();}
             | instr {$$.trad = $1.trad; memoria.resetTempDir();}
             ;
 instr       : bloque {$$.trad = $1.trad;}
@@ -75,8 +75,29 @@ instr       : bloque {$$.trad = $1.trad;}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
                 $$.trad = $3.trad;
               }
-            | PRN expr {$$.trad = "";}
-            | READ expr {$$.trad = "";}
+            | PRN expr {
+                string instruccion;
+                switch($2.tipo) {
+                  case ENTERO: instruccion = "wri "; break;
+                  case REAL: instruccion = "wrr "; break;
+                  case CHAR: instruccion = "wrc "; break;
+                  default: instruccion = "";
+                }
+                $$.trad = $2.trad + instruccion + to_string($2.dir) + "\n";
+                if ($1.println) {
+                  $$.trad += "wrl\n";
+                }
+              }
+            | READ expr {
+                string instruccion;
+                switch($2.tipo) {
+                  case ENTERO: instruccion = "rdi "; break;
+                  case REAL: instruccion = "rdr "; break;
+                  case CHAR: instruccion = "rdc "; break;
+                  default: instruccion = "";
+                }
+                $$.trad = $2.trad + instruccion + to_string($2.dir) + "\n";
+              }
             | IF expr DOSP instr {
                 if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}
                 $$.trad = "";
@@ -139,17 +160,17 @@ factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = "";}
             | NUMENTERO {
                 $$.tipo = ENTERO;
                 $$.dir = nuevoTemporal();
-                $$.trad = "mov #" + $1.lex + " " + to_string($$.dir);
+                $$.trad = "mov #" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | NUMREAL {
                 $$.tipo = REAL;
                 $$.dir = nuevoTemporal();
-                $$.trad = "mov $" + $1.lex + " " + to_string($$.dir);
+                $$.trad = "mov $" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | CTECHAR {
                 $$.tipo = CHAR;
                 $$.dir = nuevoTemporal();
-                $$.trad = "mov #" + $1.lex + " " + to_string($$.dir);
+                $$.trad = "mov #" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | PARI expr PARD {$$.tipo = $2.tipo; $$.dir = $2.dir; $$.trad = $2.trad;}
             | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}}
