@@ -22,6 +22,12 @@
   TablaTipos tipos;
   TablaSimbolos simbolos(NULL);
   MemoryManager memoria(16000, 384);
+  unsigned etiqueta = 0;
+  string siguienteEtiqueta() {
+    string e = "L" + to_string(etiqueta);
+    etiqueta++;
+    return e;
+  }
 
   //para debugging
   void mostrarTipos(void);
@@ -115,15 +121,40 @@ instr       : bloque {$$.trad = $1.trad;}
               }
             | IF expr DOSP instr {
                 if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}
-                $$.trad = "";
+                string finalIf = siguienteEtiqueta();
+                $$.trad = $2.trad;
+                $$.trad += accederAReferencia($2);
+                $$.trad += "mov @B+" + to_string($2.dir) + " A\n";
+                $$.trad += "jz " + finalIf + "\n";
+                $$.trad += $4.trad;
+                $$.trad += finalIf + "\n";
               }
             | IF expr DOSP instr ELSE instr {
                 if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}
-                $$.trad = "";
+                string finalIf = siguienteEtiqueta();
+                string finalElse = siguienteEtiqueta();
+                $$.trad = $2.trad;
+                $$.trad += accederAReferencia($2);
+                $$.trad += "mov @B+" + to_string($2.dir) + " A\n";
+                $$.trad += "jz " + finalIf + "\n";
+                $$.trad += $4.trad;
+                $$.trad += "jmp " + finalElse + "\n";
+                $$.trad += finalIf + "\n";
+                $$.trad += $6.trad;
+                $$.trad += finalElse + "\n";
               }
             | WHILE expr DOSP instr {
                 if ($2.tipo != ENTERO) {$1.lex="while"; errorSemantico(ERR_IFWHILE, $1);}
-                $$.trad = "";
+                string principioWhile = siguienteEtiqueta();
+                string finalWhile = siguienteEtiqueta();
+                $$.trad = principioWhile + "\n";
+                $$.trad += $2.trad;
+                $$.trad += accederAReferencia($2);
+                $$.trad += "mov @B+" + to_string($2.dir) + " A\n";
+                $$.trad += "jz " + finalWhile + "\n";
+                $$.trad += $4.trad;
+                $$.trad += "jmp " + principioWhile + "\n";
+                $$.trad += finalWhile + "\n";
               }
             ;
 expr        : esimple OPREL esimple {
