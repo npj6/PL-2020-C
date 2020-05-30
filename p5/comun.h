@@ -27,7 +27,7 @@ typedef struct TOKEN_STRUCT {
 
   bool println; //distincion entre print y println! no quiero usar un maldito string pa esto.
 
-  bool esArray; //
+  bool esArray; //falso por defecto
   unsigned direccionSalto; //direccion de memoria en la que se ha almacenado el salto
 
   string trad;

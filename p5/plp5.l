@@ -117,4 +117,6 @@ void crearToken(string lex) {
   yylval.limites = nullptr;
 
   yylval.indices = nullptr;
+
+  yylval.esArray = false;
 }

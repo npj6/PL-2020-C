@@ -23,6 +23,7 @@
   TablaSimbolos simbolos(NULL);
   MemoryManager memoria(16000, 384);
 
+  //para debugging
   void mostrarTipos(void);
   string nombreTipo(unsigned tipo);
   void nombreTipo(unsigned tipo, string &tipoString);
@@ -37,13 +38,15 @@
 
   string accederAReferencia(const TOKEN &t);
   string itor(const TOKEN &t, unsigned temp);
+  string negative(const TOKEN &t, unsigned temp);
+  string op(const TOKEN &t1, const TOKEN &op, const TOKEN &t2, unsigned temp);
 
   int yyerror(char *s);
 
 %}
 
 %%
-s           : PRG ID DOSP blvar bloque {mostrarTipos(); $$.trad = $5.trad + "halt"; cout << $$.trad << endl;}
+s           : PRG ID DOSP blvar bloque {$$.trad = $5.trad + "halt"; cout << $$.trad << endl;}
             ;
 bloque      : LBRA seqinstr RBRA {$$.trad = $2.trad;}
             ;
@@ -69,8 +72,8 @@ rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi
 lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
-seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + ";;\n" + $3.trad; memoria.resetTempDir();}
-            | instr {$$.trad = $1.trad; memoria.resetTempDir();}
+seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + $3.trad + ";;\n"; memoria.resetTempDir();}
+            | instr {$$.trad = $1.trad + ";;\n"; memoria.resetTempDir();}
             ;
 instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
@@ -127,17 +130,19 @@ expr        : esimple OPREL esimple {
                 $$.tipo = ENTERO;
                 $$.trad = $1.trad + $3.trad;
                 if($1.tipo == CHAR) {
-                  $2.tipo = CHAR;
+                  $2.trad += "c";
                   if($3.tipo != CHAR) {msgErrorOperador(CHAR, $2, ERR_OPDER);}
                 } else {
                   if($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
                 }
-                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO;}
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.trad += "i";}
                   else {
-                    $2.tipo = REAL;
+                    $2.trad += "r";
                     if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
                     if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
+                $$.dir = nuevoTemporal();
+                $$.trad += op($1, $2, $3, $$.dir);
               }
             | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             ;
@@ -145,29 +150,36 @@ esimple     : esimple OPAS term {
                 $$.trad = $1.trad + $3.trad;
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
                 if ($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
-                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO; $$.tipo = ENTERO;}
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.trad += "i"; $$.tipo = ENTERO;}
                   else {
-                    $2.tipo = REAL; $$.tipo = REAL;
+                    $2.trad += "r"; $$.tipo = REAL;
                     if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
                     if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
+                $$.dir = nuevoTemporal();
+                $$.trad += op($1, $2, $3, $$.dir);
               }
             | term {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             | OPAS term {
+                $$.trad = $2.trad;
                 if ($2.tipo == CHAR) {msgErrorOperador(NUMERICO, $1, ERR_OPDER);}
                 $$.tipo = $2.tipo;
+                $$.dir = nuevoTemporal();
+                $$.trad += negative($2, $$.dir);
               }
             ;
 term        : term OPMD factor {
                 $$.trad = $1.trad + $3.trad;
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
                 if ($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
-                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO; $$.tipo = ENTERO;}
+                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.trad += "i"; $$.tipo = ENTERO;}
                   else {
-                    $2.tipo = REAL; $$.tipo = REAL;
+                    $2.trad += "r"; $$.tipo = REAL;
                     if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
                     if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
+                $$.dir = nuevoTemporal();
+                $$.trad += op($1, $2, $3, $$.dir);
               }
             | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             ;
@@ -197,7 +209,6 @@ ref         : ID {
                 //guarda los datos de la referencia
                 $$.tipo = $1.tipo;
                 $$.dir = $1.dir;
-                $$.esArray = false;
               }
             | ID {buscarSimbolo($1);} CORI {$$.indices = new vector<TOKEN*>(); $$.numIndices = tipos.tipos[$1.tipo].arrTams.size();} lisexpr CORD {
                 unsigned max_size = tipos.tipos[$1.tipo].arrTams.size();
@@ -460,4 +471,25 @@ string itor(const TOKEN &t, unsigned temp) {
   trad += "itor\n";
   trad += "mov A " + to_string(temp) + "\n";
   return trad;
+}
+
+string op(const TOKEN &t1, const TOKEN &op, const TOKEN &t2, unsigned temp) {
+  //Genera el codigo de una operacion
+  string trad = accederAReferencia(t1);
+  trad += "mov @B+" + to_string(t1.dir) + " A\n";
+  trad += accederAReferencia(t2);
+  trad += op.trad + " @B+" + to_string(t2.dir) + "\n";
+  trad += "mov A " + to_string(temp) + "\n";
+  return trad;
+}
+
+string negative(const TOKEN &t, unsigned temp) {
+  //Invierte un numero
+  string trad = accederAReferencia(t);
+  trad += "mov @B+" + to_string(t.dir) + " A\n";
+  if(t.tipo == ENTERO) {trad += "muli #-1\n";}
+  if(t.tipo == REAL) {trad += "mulr $-1.0\n";}
+  trad += "mov A " + to_string(temp) + "\n";
+  return trad;
+
 }

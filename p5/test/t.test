@@ -6,7 +6,7 @@ var
 {
   read i;
   c = '0';
-  r = 0;
+  r = -(i + 7.0*2) / 4;
   println i;
   print c;
   println r
