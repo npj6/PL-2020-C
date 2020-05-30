@@ -69,13 +69,13 @@ rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi
 lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
-seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + $3.trad; memoria.resetTempDir();}
+seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + ";;\n" + $3.trad; memoria.resetTempDir();}
             | instr {$$.trad = $1.trad; memoria.resetTempDir();}
             ;
 instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
                 $$.trad = $3.trad;
-                if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
+                if($1.tipo==REAL && $3.tipo==ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
                 unsigned intercambio = nuevoTemporal();
                 $$.trad += accederAReferencia($3);
@@ -125,6 +125,7 @@ instr       : bloque {$$.trad = $1.trad;}
             ;
 expr        : esimple OPREL esimple {
                 $$.tipo = ENTERO;
+                $$.trad = $1.trad + $3.trad;
                 if($1.tipo == CHAR) {
                   $2.tipo = CHAR;
                   if($3.tipo != CHAR) {msgErrorOperador(CHAR, $2, ERR_OPDER);}
@@ -134,20 +135,21 @@ expr        : esimple OPREL esimple {
                 if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO;}
                   else {
                     $2.tipo = REAL;
-                    if($1.tipo == ENTERO) {/*ITOR*/}
-                    if($3.tipo == ENTERO) {/*ITOR*/}
+                    if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
+                    if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
               }
             | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             ;
 esimple     : esimple OPAS term {
+                $$.trad = $1.trad + $3.trad;
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
                 if ($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
                 if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO; $$.tipo = ENTERO;}
                   else {
                     $2.tipo = REAL; $$.tipo = REAL;
-                    if($1.tipo == ENTERO) {/*ITOR*/}
-                    if($3.tipo == ENTERO) {/*ITOR*/}
+                    if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
+                    if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
               }
             | term {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
@@ -157,13 +159,14 @@ esimple     : esimple OPAS term {
               }
             ;
 term        : term OPMD factor {
+                $$.trad = $1.trad + $3.trad;
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
                 if ($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
                 if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.tipo = ENTERO; $$.tipo = ENTERO;}
                   else {
                     $2.tipo = REAL; $$.tipo = REAL;
-                    if($1.tipo == ENTERO) {/*ITOR*/}
-                    if($3.tipo == ENTERO) {/*ITOR*/}
+                    if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
+                    if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
               }
             | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
