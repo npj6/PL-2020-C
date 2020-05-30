@@ -271,7 +271,7 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
                break;
         case ERR_SOBRAN: fprintf(stderr,"sobran indices\n");//USADO
                // fila,columna del '[' si no es array, o de la ',' que sobra
-               break;$B+
+               break;
         case ERR_INDICE_ENTERO: fprintf(stderr,"el indice de un array debe ser de tipo entero\n");//USADO
                // fila,columna del '[' si es el primero, o de la ',' inmediatamente anterior
                break;
@@ -442,8 +442,8 @@ void nombreTipo(unsigned tipo, string &tipoString) {
 string accederAReferencia(const TOKEN &t) {
   //Prepara para que se pueda acceder al TOKEN usando @B+n
   string trad;
-  if (token.esArray) {
-    trad = "mov "+to_string(token.direccionSalto)+" B\n";
+  if (t.esArray) {
+    trad = "mov "+to_string(t.direccionSalto)+" B\n";
   } else {
     trad = "mov #0 B\n";
   }
@@ -456,4 +456,5 @@ string itor(const TOKEN &t, unsigned temp) {
   trad += "mov @B+" + to_string(t.dir) + " A\n";
   trad += "itor\n";
   trad += "mov A " + to_string(temp) + "\n";
+  return trad;
 }
