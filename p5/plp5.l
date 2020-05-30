@@ -61,10 +61,40 @@ toInt {crearToken(nullptr); column += 5; return TOINT;}
 \) {crearToken(nullptr); column++; return PARD;}
 \{ {crearToken(nullptr); column++; return LBRA;}
 \} {crearToken(nullptr); column++; return RBRA;}
-[<>=!]= {crearToken(yytext); column += 2; return OPREL;}
-[<>] {crearToken(yytext); column++; return OPREL;}
-[+-] {crearToken(yytext); column++; return OPAS;}
-[*/] {crearToken(yytext); column++; return OPMD;}
+[<>=!]= {
+  crearToken(nullptr); column += 2;
+  switch(yytext[0]) {
+    case '<': yylval.trad = "leq"; break;
+    case '>': yylval.trad = "gtq"; break;
+    case '=': yylval.trad = "eql"; break;
+    case '!': yylval.trad = "neq"; break;
+  }
+  return OPREL;
+}
+[<>] {
+  crearToken(nullptr); column++;
+  switch(yytext[0]) {
+    case '<': yylval.trad = "lss"; break;
+    case '>': yylval.trad = "gtr"; break;
+  }
+  return OPREL;
+}
+[+-] {
+  crearToken(nullptr); column++;
+  switch(yytext[0]) {
+    case '+': yylval.trad = "add"; break;
+    case '-': yylval.trad = "sub"; break;
+  }
+  return OPAS;
+}
+[*/] {
+  crearToken(nullptr); column++;
+  switch(yytext[0]) {
+    case '*': yylval.trad = "mul"; break;
+    case '/': yylval.trad = "div"; break;
+  }
+  return OPMD;
+}
 = {crearToken(nullptr); column++; return ASIG;}
 \[ {crearToken(nullptr); column++; return CORI;}
 \] {crearToken(nullptr); column++; return CORD;}
