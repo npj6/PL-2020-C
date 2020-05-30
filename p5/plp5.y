@@ -83,7 +83,7 @@ seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + $3.trad + ";;\n"; memoria.
             ;
 instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
-                $$.trad = $3.trad;
+                $$.trad = $1.trad + $3.trad;
                 if($1.tipo==REAL && $3.tipo==ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
                 unsigned intercambio = nuevoTemporal();
@@ -214,7 +214,7 @@ term        : term OPMD factor {
               }
             | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             ;
-factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = "";}
+factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             | NUMENTERO {
                 $$.tipo = ENTERO;
                 $$.dir = nuevoTemporal();
@@ -263,12 +263,35 @@ ref         : ID {
                 //guarda los datos de la referencia
                 $$.tipo = $1.tipo;
                 $$.dir = $1.dir;
+                $$.trad = "";
               }
             | ID {buscarSimbolo($1);} CORI {$$.indices = new vector<TOKEN*>(); $$.numIndices = tipos.tipos[$1.tipo].arrTams.size();} lisexpr CORD {
                 unsigned max_size = tipos.tipos[$1.tipo].arrTams.size();
                 if ($4.indices->size() < max_size) {errorSemantico(ERR_FALTAN, $6);} //comprueba que no sobren indices
-                //libera la memoria reservada para las expresiones
+                $$.trad = "";
+                $$.tipo = $1.tipo;
+                //guarda 0 como salto
+                $$.direccionSalto = nuevoTemporal();
+                $$.trad += "mov #0 " + to_string($$.direccionSalto) + "\n";
+
                 for(unsigned i=0; i<$4.indices->size(); i++) {
+                  //multiplica el salto
+                  unsigned tam = tipos.tipos[$$.tipo].limiteSuperior - tipos.tipos[$$.tipo].limiteInferior + 1;
+                  $$.trad += "mov #" + to_string(tam) + " A\n";
+                  $$.trad += "muli " + to_string($$.direccionSalto) + "\n";
+                  $$.trad += "mov A " + to_string($$.direccionSalto) + "\n";
+                  //traduce la expresion
+                  $$.trad += (*$4.indices)[i]->trad;
+                  //sumo el resultado de la expresion al salto
+                  $$.trad += "mov " + to_string($$.direccionSalto) + " A\n";
+                  $$.trad += accederAReferencia(*(*$4.indices)[i]);
+                  $$.trad += "addi @B+" + to_string((*$4.indices)[i]->dir) + "\n";
+                  //resto el limite inferior al salto (A)
+                  $$.trad += "subi #" + to_string(tipos.tipos[$$.tipo].limiteInferior) + "\n";
+                  //guarda el salto y se mueve al siguiente tipo
+                  $$.trad += "mov A " + to_string($$.direccionSalto) + "\n";
+                  $$.tipo = tipos.tipos[$$.tipo].tipoBase;
+                  //libera la memoria reservada para las expresiones
                   delete (*$4.indices)[i];
                 }
                 delete $4.indices;
@@ -276,7 +299,6 @@ ref         : ID {
                 $$.tipo = tipos.tipos[$1.tipo].tipoOrigen;
                 $$.dir = $1.dir; //cambiar despues
                 $$.esArray = true;
-                $$.direccionSalto = 0; //cambiar!!! funcion acceso array.
               }
             ;
 lisexpr     : lisexpr COMA expr {

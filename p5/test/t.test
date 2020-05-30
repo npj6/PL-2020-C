@@ -1,15 +1,9 @@
 prg test:
 var
-  int : i;
-  char : c;
-  real : r;
+  [1..8, 50..213, 120..123] int : i;
+  [3..10] real : h;
 {
-  i = toInt(0);
-  println i;
-  i = toInt('0');
-  println i;
-  i = toInt(9.224);
-  println i;
-  c = toChr(48);
-  println c
+  i[1, 123, 123] = 5;
+  h[3] = 123.1234;
+  println i[1, toInt(h[3]), 123]
 }
