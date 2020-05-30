@@ -4,15 +4,12 @@ var
   char : c;
   real : r;
 {
-  read i;
-  c = '0';
-  r = -(i + 7.0*0) / 4;
+  i = toInt(0);
   println i;
-  print c;
-  println r;
-  while i != r: {
-    i = i - 1;
-    r = -(i + 7.0*0) / 4;
-    println i
-  }
+  i = toInt('0');
+  println i;
+  i = toInt(9.224);
+  println i;
+  c = toChr(48);
+  println c
 }

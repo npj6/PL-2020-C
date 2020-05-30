@@ -231,8 +231,31 @@ factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; 
                 $$.trad = "mov #" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | PARI expr PARD {$$.tipo = $2.tipo; $$.dir = $2.dir; $$.esArray = $2.esArray; $$.direccionSalto = $2.direccionSalto; $$.trad = $2.trad;}
-            | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}}
-            | TOINT PARI esimple PARD {$$.tipo = ENTERO;}
+            | TOCHR PARI esimple PARD {
+                $$.tipo = CHAR;
+                $$.trad = $3.trad;
+                if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}
+                $$.dir = nuevoTemporal();
+                $$.trad += accederAReferencia($3);
+                $$.trad += "mov @B+" + to_string($3.dir) + " A\n";
+                $$.trad += "modi #256\n";
+                $$.trad += "mov A " + to_string($$.dir) + "\n";
+              }
+            | TOINT PARI esimple PARD {
+                $$.tipo = ENTERO;
+                $$.trad = $3.trad;
+                if ($3.tipo != REAL) {
+                  $$.dir = $3.dir;
+                  $$.esArray = $3.esArray;
+                  $$.direccionSalto = $3.direccionSalto;
+                } else {
+                  $$.dir = nuevoTemporal();
+                  $$.trad += accederAReferencia($3);
+                  $$.trad += "mov @B+" + to_string($3.dir) + " A\n";
+                  $$.trad += "rtoi\n";
+                  $$.trad += "mov A " + to_string($$.dir) + "\n";
+                }
+              }
             ;
 ref         : ID {
                 buscarSimbolo($1);
