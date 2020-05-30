@@ -35,6 +35,9 @@
   unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsigned tbase);
   unsigned nuevoTipoArray(unsigned linf, unsigned lsup, unsigned tbase);
 
+  string accederAReferencia(const TOKEN &t);
+  string itor(const TOKEN &t, unsigned temp);
+
   int yyerror(char *s);
 
 %}
@@ -71,9 +74,14 @@ seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + $3.trad; memoria.resetTemp
             ;
 instr       : bloque {$$.trad = $1.trad;}
             | ref ASIG expr {
+                $$.trad = $3.trad;
                 if($1.tipo==REAL && $3.tipo==ENTERO) {/*ITOR*/}
                 else if($1.tipo != $3.tipo) {errorSemantico(ERR_ASIG, $2);}
-                $$.trad = $3.trad + "mov " + to_string($3.dir) + " " + to_string($1.dir)+"\n";
+                unsigned intercambio = nuevoTemporal();
+                $$.trad += accederAReferencia($3);
+                $$.trad += "mov @B+" + to_string($3.dir) + " " + to_string(intercambio)+"\n";
+                $$.trad += accederAReferencia($1);
+                $$.trad += "mov " + to_string(intercambio) + " @B+" + to_string($1.dir)+"\n";
               }
             | PRN expr {
                 string instruccion;
@@ -83,7 +91,9 @@ instr       : bloque {$$.trad = $1.trad;}
                   case CHAR: instruccion = "wrc "; break;
                   default: instruccion = "";
                 }
-                $$.trad = $2.trad + instruccion + to_string($2.dir) + "\n";
+                $$.trad = $2.trad;
+                $$.trad += accederAReferencia($2);
+                $$.trad += instruccion + "@B+" + to_string($2.dir) + "\n";
                 if ($1.println) {
                   $$.trad += "wrl\n";
                 }
@@ -96,7 +106,9 @@ instr       : bloque {$$.trad = $1.trad;}
                   case CHAR: instruccion = "rdc "; break;
                   default: instruccion = "";
                 }
-                $$.trad = $2.trad + instruccion + to_string($2.dir) + "\n";
+                $$.trad = $2.trad;
+                $$.trad += accederAReferencia($2);
+                $$.trad += instruccion + "@B+" + to_string($2.dir) + "\n";
               }
             | IF expr DOSP instr {
                 if ($2.tipo != ENTERO) {$1.lex="if"; errorSemantico(ERR_IFWHILE, $1);}
@@ -126,7 +138,7 @@ expr        : esimple OPREL esimple {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
+            | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             ;
 esimple     : esimple OPAS term {
                 if ($1.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPIZQ);}
@@ -138,7 +150,7 @@ esimple     : esimple OPAS term {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | term {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
+            | term {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             | OPAS term {
                 if ($2.tipo == CHAR) {msgErrorOperador(NUMERICO, $1, ERR_OPDER);}
                 $$.tipo = $2.tipo;
@@ -154,9 +166,9 @@ term        : term OPMD factor {
                     if($3.tipo == ENTERO) {/*ITOR*/}
                   }
               }
-            | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = $1.trad;}
+            | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
             ;
-factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = "";}
+factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = "";}
             | NUMENTERO {
                 $$.tipo = ENTERO;
                 $$.dir = nuevoTemporal();
@@ -172,7 +184,7 @@ factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.trad = "";}
                 $$.dir = nuevoTemporal();
                 $$.trad = "mov #" + $1.lex + " " + to_string($$.dir) + "\n";
               }
-            | PARI expr PARD {$$.tipo = $2.tipo; $$.dir = $2.dir; $$.trad = $2.trad;}
+            | PARI expr PARD {$$.tipo = $2.tipo; $$.dir = $2.dir; $$.esArray = $2.esArray; $$.direccionSalto = $2.direccionSalto; $$.trad = $2.trad;}
             | TOCHR PARI esimple PARD {$$.tipo = CHAR; if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}}
             | TOINT PARI esimple PARD {$$.tipo = ENTERO;}
             ;
@@ -182,6 +194,7 @@ ref         : ID {
                 //guarda los datos de la referencia
                 $$.tipo = $1.tipo;
                 $$.dir = $1.dir;
+                $$.esArray = false;
               }
             | ID {buscarSimbolo($1);} CORI {$$.indices = new vector<TOKEN*>(); $$.numIndices = tipos.tipos[$1.tipo].arrTams.size();} lisexpr CORD {
                 unsigned max_size = tipos.tipos[$1.tipo].arrTams.size();
@@ -193,7 +206,9 @@ ref         : ID {
                 delete $4.indices;
                 //guarda los datos de la referencia
                 $$.tipo = tipos.tipos[$1.tipo].tipoOrigen;
-                $$.dir = $1.tipo; //cambiar despues!
+                $$.dir = $1.dir; //cambiar despues
+                $$.esArray = true;
+                $$.direccionSalto = 0; //cambiar!!! funcion acceso array.
               }
             ;
 lisexpr     : lisexpr COMA expr {
@@ -256,7 +271,7 @@ void errorSemantico(int nerror,int fila,int columna,const char *s) {
                break;
         case ERR_SOBRAN: fprintf(stderr,"sobran indices\n");//USADO
                // fila,columna del '[' si no es array, o de la ',' que sobra
-               break;
+               break;$B+
         case ERR_INDICE_ENTERO: fprintf(stderr,"el indice de un array debe ser de tipo entero\n");//USADO
                // fila,columna del '[' si es el primero, o de la ',' inmediatamente anterior
                break;
@@ -358,7 +373,6 @@ unsigned comprobarTipo(const vector<tuple<unsigned, unsigned> > &limites, unsign
   return ultimoTipo;
 }
 
-
 unsigned nuevoTemporal() {
   unsigned dir;
   try {
@@ -423,4 +437,23 @@ void nombreTipo(unsigned tipo, string &tipoString) {
     tipoString += "["+to_string(tipos.tipos[tipo].limiteInferior)+".."+to_string(tipos.tipos[tipo].limiteSuperior)+"]";
     nombreTipo(tipos.tipos[tipo].tipoBase, tipoString);
   }
+}
+
+string accederAReferencia(const TOKEN &t) {
+  //Prepara para que se pueda acceder al TOKEN usando @B+n
+  string trad;
+  if (token.esArray) {
+    trad = "mov "+to_string(token.direccionSalto)+" B\n";
+  } else {
+    trad = "mov #0 B\n";
+  }
+  return trad;
+}
+
+string itor(const TOKEN &t, unsigned temp) {
+  //Convierte un entero a real
+  string trad = accederAReferencia(t);
+  trad += "mov @B+" + to_string(t.dir) + " A\n";
+  trad += "itor\n";
+  trad += "mov A " + to_string(temp) + "\n";
 }
