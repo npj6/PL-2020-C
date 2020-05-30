@@ -62,7 +62,7 @@ toInt {crearToken(nullptr); column += 5; return TOINT;}
 \{ {crearToken(nullptr); column++; return LBRA;}
 \} {crearToken(nullptr); column++; return RBRA;}
 [<>=!]= {
-  crearToken(nullptr); column += 2;
+  crearToken(yytext); column += 2;
   switch(yytext[0]) {
     case '<': yylval.trad = "leq"; break;
     case '>': yylval.trad = "geq"; break;
@@ -72,7 +72,7 @@ toInt {crearToken(nullptr); column += 5; return TOINT;}
   return OPREL;
 }
 [<>] {
-  crearToken(nullptr); column++;
+  crearToken(yytext); column++;
   switch(yytext[0]) {
     case '<': yylval.trad = "lss"; break;
     case '>': yylval.trad = "gtr"; break;
@@ -80,7 +80,7 @@ toInt {crearToken(nullptr); column += 5; return TOINT;}
   return OPREL;
 }
 [+-] {
-  crearToken(nullptr); column++;
+  crearToken(yytext); column++;
   switch(yytext[0]) {
     case '+': yylval.trad = "add"; break;
     case '-': yylval.trad = "sub"; break;
@@ -88,7 +88,7 @@ toInt {crearToken(nullptr); column += 5; return TOINT;}
   return OPAS;
 }
 [*/] {
-  crearToken(nullptr); column++;
+  crearToken(yytext); column++;
   switch(yytext[0]) {
     case '*': yylval.trad = "mul"; break;
     case '/': yylval.trad = "div"; break;
