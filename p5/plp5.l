@@ -65,7 +65,7 @@ toInt {crearToken(nullptr); column += 5; return TOINT;}
   crearToken(nullptr); column += 2;
   switch(yytext[0]) {
     case '<': yylval.trad = "leq"; break;
-    case '>': yylval.trad = "gtq"; break;
+    case '>': yylval.trad = "geq"; break;
     case '=': yylval.trad = "eql"; break;
     case '!': yylval.trad = "neq"; break;
   }

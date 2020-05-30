@@ -75,7 +75,7 @@ dims        : COMA rango dims {$$.limites = $3.limites; $$.limites->push_back(ma
             ;
 rango       : NUMENTERO PTOPTO NUMENTERO {$$.lInf = stoi($1.lex); $$.lSup = stoi($3.lex); if($$.lSup<$$.lInf) errorSemantico(ERR_RANGO, $3);}
             ;
-lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
+lident      : lident COMA ID {$3.tipo = $0.tipo; nuevoSimbolo($3, $-1);}
             | ID {$1.tipo = $0.tipo; nuevoSimbolo($1, $-1);}
             ;
 seqinstr    : seqinstr PYC instr {$$.trad = $1.trad + $3.trad + ";;\n"; memoria.resetTempDir();}
@@ -161,18 +161,19 @@ expr        : esimple OPREL esimple {
                 $$.tipo = ENTERO;
                 $$.trad = $1.trad + $3.trad;
                 if($1.tipo == CHAR) {
-                  $2.trad += "c";
+                  $2.trad += "i";
                   if($3.tipo != CHAR) {msgErrorOperador(CHAR, $2, ERR_OPDER);}
                 } else {
                   if($3.tipo == CHAR) {msgErrorOperador(NUMERICO, $2, ERR_OPDER);}
+                  if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.trad += "i";}
+                    else {
+                      $2.trad += "r";
+                      if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
+                      if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
+                    }
                 }
-                if ($1.tipo == ENTERO && $3.tipo == ENTERO) {$2.trad += "i";}
-                  else {
-                    $2.trad += "r";
-                    if($1.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($1, d); $1.dir = d;}
-                    if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
-                  }
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad += op($1, $2, $3, $$.dir);
               }
             | esimple {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
@@ -188,6 +189,7 @@ esimple     : esimple OPAS term {
                     if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad += op($1, $2, $3, $$.dir);
               }
             | term {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
@@ -196,6 +198,7 @@ esimple     : esimple OPAS term {
                 if ($2.tipo == CHAR) {msgErrorOperador(NUMERICO, $1, ERR_OPDER);}
                 $$.tipo = $2.tipo;
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad += negative($2, $$.dir);
               }
             ;
@@ -210,6 +213,7 @@ term        : term OPMD factor {
                     if($3.tipo == ENTERO) {unsigned d = nuevoTemporal(); $$.trad += itor($3, d); $3.dir = d;}
                   }
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad += op($1, $2, $3, $$.dir);
               }
             | factor {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; $$.direccionSalto = $1.direccionSalto; $$.trad = $1.trad;}
@@ -218,16 +222,19 @@ factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; 
             | NUMENTERO {
                 $$.tipo = ENTERO;
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad = "mov #" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | NUMREAL {
                 $$.tipo = REAL;
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad = "mov $" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | CTECHAR {
                 $$.tipo = CHAR;
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad = "mov #" + $1.lex + " " + to_string($$.dir) + "\n";
               }
             | PARI expr PARD {$$.tipo = $2.tipo; $$.dir = $2.dir; $$.esArray = $2.esArray; $$.direccionSalto = $2.direccionSalto; $$.trad = $2.trad;}
@@ -236,6 +243,7 @@ factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; 
                 $$.trad = $3.trad;
                 if($3.tipo != ENTERO) {$1.lex="toChr"; errorSemantico(ERR_TOCHR, $1);}
                 $$.dir = nuevoTemporal();
+                $$.esArray = false;
                 $$.trad += accederAReferencia($3);
                 $$.trad += "mov @B+" + to_string($3.dir) + " A\n";
                 $$.trad += "modi #256\n";
@@ -250,6 +258,7 @@ factor      : ref {$$.tipo = $1.tipo; $$.dir = $1.dir; $$.esArray = $1.esArray; 
                   $$.direccionSalto = $3.direccionSalto;
                 } else {
                   $$.dir = nuevoTemporal();
+                  $$.esArray = false;
                   $$.trad += accederAReferencia($3);
                   $$.trad += "mov @B+" + to_string($3.dir) + " A\n";
                   $$.trad += "rtoi\n";
@@ -263,6 +272,7 @@ ref         : ID {
                 //guarda los datos de la referencia
                 $$.tipo = $1.tipo;
                 $$.dir = $1.dir;
+                $$.esArray = false;
                 $$.trad = "";
               }
             | ID {buscarSimbolo($1);} CORI {$$.indices = new vector<TOKEN*>(); $$.numIndices = tipos.tipos[$1.tipo].arrTams.size();} lisexpr CORD {
